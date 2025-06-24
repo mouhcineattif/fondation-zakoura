@@ -4,45 +4,74 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateProjectsTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
     {
         Schema::create('projects', function (Blueprint $table) {
             $table->id();
 
-            $table->string('nom_projet');
-            $table->string('code_projet');
-            $table->enum('nature_projet', ['Opérationnel', 'Institutionnel', 'Expérimental'])->nullable(false);
-            $table->enum('type_projet', ['Alphabétisation', 'Éducation', 'Formation', 'Sensibilisation'])->nullable(false);
+            $table->string('code_projet')->unique();
 
-            $table->enum('statut_projet', ['Initiation', 'Conception', 'En cours', 'Terminé', 'Archivé']);
-            $table->date('date_lancement');
-            $table->date('date_cloture');
-            $table->date('date_debut_reelle')->nullable();
+            $table->enum('nature_du_projet', ['Opérationnel', 'Institutionnel', 'Expérimental']);
 
-            $table->unsignedBigInteger('responsable_id'); // utilisateur SI
-            $table->json('partenaires'); // multiple IDs
-            $table->enum('role_partenaire', ['Principal', 'Co-porteur', 'Financier', 'Appui technique']);
 
-            $table->decimal('budget_total', 15, 2); // en MAD ou devise liée
-            $table->decimal('quote_part_partenaires', 15, 2)->nullable();
-            $table->decimal('apport_fz', 15, 2)->nullable();
+            $table->enum('type_du_projet', ['Alphabétisation', 'Éducation', 'Formation', 'Sensibilisation']);
 
-            $table->string('banque'); // BMCE, CIH, BOA...
-            $table->string('agence_bancaire')->nullable();
-            $table->string('rib');
+            $table->enum('type_du_partenaire', ['Opérationnel', 'Institutionnel', 'Expérimental']);
 
-            $table->text('notes')->nullable();
-            $table->string('code_automatique')->nullable()->unique();
+
+            $table->enum('structure_du_partenaire', ['Publique', 'Privée', 'Associative', 'Coopérative']);
+
+
+            $table->enum('statut_du_projet', ['Prospection', 'En discussion', 'Convention signée', 'Contrat actif', 'Archivé']);
+
+            $table->date('date_de_lancement');
+
+            $table->date('date_de_cloture')->nullable();
+
+            $table->date('date_de_debut_reelle')->nullable();
+
+            $table->unsignedBigInteger('responsable_id');
+            $table->foreign('responsable_id')->references('id')->on('users')->onDelete('restrict');
+
+            // Partenaire(s) et Rôle du partenaire
+            // Je pense que c'est mieux creer une table pivot (partenaire_projects) avec les colonnes suivantes :
+            // - partenaire_id
+            // - projet_id
+            // - role_du_partenaire
+
+            $table->decimal('budget_total', 15, 2);
+
+            $table->decimal('quote_part_partenaire', 15, 2)->nullable();
+
+            $table->decimal('apport_fz_zakoura', 15, 2)->nullable();
+
+            $table->enum('banque', ['BMCE', 'CIH', 'BOA', 'Attijari']);
+
+            $table->string('agence_bancaire');
+
+            $table->string('rib', 34);
+
+            $table->text('notes_ou_observation')->nullable();
+
+
+            $table->unsignedBigInteger('created_by_user_id');
+            $table->foreign('created_by_user_id')->references('id')->on('users')->onDelete('restrict');
+
             $table->timestamps();
-
-            $table->foreign('responsable_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
-    public function down()
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
     {
         Schema::dropIfExists('projects');
     }
-}
+};
+
